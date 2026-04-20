@@ -3,19 +3,19 @@
 <head>
     <meta charset="utf-8" />
     <title>Birthday Surprise — Real Europe Map</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />   
     <style>
         :root{
             --panel:#0b1220cc; --bg:#0f1722; --accent:#f59e0b;
             --removed:#071225; --ok:#10b981; --bad:#ef4444;
         }
-        html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e6eef6;background:linear-gradient(180deg,#071428 0%, #071a2a 60%);display:flex;align-items:center;justify-content:center;}
-        .card{width:980px;max-width:96vw;background:var(--panel);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.6);backdrop-filter:blur(4px);}
+        html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#e6eef6;background:linear-gradient(180deg,#071428 0%, #071a2a 60%);display:flex;align-items:flex-start;justify-content:center;padding:24px 0;box-sizing:border-box;min-height:100vh;}
+        .card{width:1120px;max-width:96vw;background:var(--panel);padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.6);backdrop-filter:blur(4px);}
         header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
         h1{font-size:18px;margin:0}
         p{margin:6px 0 14px;color:#bcd2ea;font-size:13px}
         .map-wrap{background:linear-gradient(180deg,#0a1a2a, #07202d);border-radius:10px;padding:12px;display:flex;justify-content:center;}
-        svg{width:960px;max-width:96vw;height:620px;overflow:hidden;border-radius:6px}
+        svg{width:1080px;max-width:96vw;height:760px;overflow:hidden;border-radius:6px}
         .country{fill:#7fb3d5;stroke:#062331;stroke-width:0.7;cursor:pointer;transition:opacity .6s, transform .35s, filter .3s;}
         .country:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 6px 10px rgba(3,10,20,0.6));}
         .removed{opacity:0;pointer-events:none;filter:grayscale(1) brightness(.6);transform:scale(.98) !important;}
@@ -99,6 +99,25 @@
             if(win) win.remove();
             document.querySelectorAll('.popup').forEach(p => p.remove());
             hideModal();
+
+            // Reset dice state and UI so Roll is reset when map is reset
+            try{
+                if(typeof diceState !== 'undefined'){
+                    diceState.rollsLeft = 3;
+                    diceState.spinning = false;
+                }
+                const dieEl = document.getElementById('dieFace');
+                if(dieEl){
+                    dieEl.classList.remove('spinning');
+                    dieEl.textContent = '—';
+                }
+                const rollsLeftDisplay = document.getElementById('rollsLeft');
+                if(rollsLeftDisplay) rollsLeftDisplay.textContent = '3';
+                const rollInfoEl = document.getElementById('rollInfo');
+                if(rollInfoEl) rollInfoEl.textContent = 'Rolls left: ';
+            }catch(e){
+                // ignore if elements not yet present
+            }
         }
 
         function getName(d){
