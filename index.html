@@ -27,14 +27,11 @@
         .dialog{background:#071428;padding:20px;border-radius:10px;color:#e6f6ff;min-width:260px;text-align:center;box-shadow:0 18px 40px rgba(2,6,23,0.6)}
         .dialog h2{margin:0 0 8px;font-size:18px}
         .dialog p{margin:0 0 12px;color:#bcd2ea;font-size:14px}
-        /* hide country labels by default on initial load */
         .country-label{display:none;font-size:10px;fill:#dff6ff;font-weight:600;pointer-events:none;text-anchor:middle;}
-        /* transient popup anchored to country */
         .popup{
             position:absolute;background:linear-gradient(180deg,#091b2a,#06202a);color:#e6f6ff;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
             box-shadow:0 8px 20px rgba(0,0,0,0.6);white-space:nowrap;transform:translate(-50%,-120%);z-index:9998;font-size:13px;
         }
-        /* simple dice UI */
         .dice{width:76px;height:76px;display:flex;align-items:center;justify-content:center;background:#062b3a;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
         .die{font-size:32px;color:#e6f6ff;font-weight:700;transition:transform 700ms cubic-bezier(.2,.9,.2,1)}
         .die.spinning{transform:rotateX(1080deg) rotateY(720deg)}
@@ -47,7 +44,6 @@
         <div class="map-wrap">
             <svg id="map" viewBox="0 0 980 620" aria-labelledby="mapTitle" role="img">
                 <title id="mapTitle">Europe map for birthday game</title>
-                <!-- Paths will be added by script -->
             </svg>
         </div>
 
@@ -74,13 +70,10 @@
             </div>
         </div>
     </div>
-
-    <!-- D3 + topojson-client from CDN (no build step) -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
 
     <script>
-    // GitHub Copilot
     (function(){
         const svg = d3.select('#map');
         const width = 980, height = 620;
@@ -88,29 +81,22 @@
         const resetBtn = document.getElementById('resetBtn');
         const closeModal = document.getElementById('closeModal');
         const resetFromModal = document.getElementById('resetFromModal');
-
-        // Use a reliable GeoJSON source (world countries) and filter to Europe by centroid.
         const topoUrl = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
 
         let countrySelection = null;
         let labelsSelection = null;
         let features = [];
-        let path; // will be set after projection
+        let path; 
 
         function showModal(){ modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); }
         function hideModal(){ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); }
 
         function resetMap(){
             if(!countrySelection) return;
-            // restore countries
             countrySelection.classed('removed', false).style('display', null).attr('transform', null);
-            // restore labels
-            // keep labels hidden by default after reset
             if(labelsSelection) labelsSelection.style('display', 'none').classed('removed', false);
-            // clear any ephemeral win overlay
             const win = document.getElementById('winOverlay');
             if(win) win.remove();
-            // remove any transient popups
             document.querySelectorAll('.popup').forEach(p => p.remove());
             hideModal();
         }
@@ -120,7 +106,6 @@
             return d.properties.ADMIN || d.properties.NAME || d.properties.name || d.properties.country || d.id || '';
         }
 
-        // Load topojson/geojson, convert to GeoJSON features and draw (supports TopoJSON or GeoJSON)
         fetch(topoUrl).then(r => {
             if(!r.ok) throw new Error('Network response was not ok: ' + r.status);
             return r.json();
@@ -134,8 +119,6 @@
             } else {
                 throw new Error('Unsupported geo data format');
             }
-
-            // Filter features to approximate Europe by centroid longitude/latitude bounds
             const europeFeatures = geo.features.filter(f => {
                 const c = d3.geoCentroid(f);
                 if(!Array.isArray(c)) return false;
@@ -144,15 +127,12 @@
             });
 
             features = europeFeatures;
-
-            // Projection and path (fit to the filtered features)
             const projection = d3.geoMercator()
                 .rotate([10,0])
                 .fitSize([width, height], { type: 'FeatureCollection', features });
 
             path = d3.geoPath().projection(projection);
 
-            // Draw countries
             countrySelection = svg.selectAll('path.country')
                 .data(features, d => getName(d))
                 .join('path')
@@ -164,7 +144,6 @@
                     return 'c_' + name.replace(/[^a-z0-9]+/ig,'_');
                 })
                 .each(function(d){
-                    // attach title for tooltip/assistive tech
                     const name = getName(d) || 'Country';
                     const t = document.createElementNS('http://www.w3.org/2000/svg','title');
                     t.textContent = name;
@@ -173,28 +152,21 @@
                 .on('click', function(event, d){
                     const name = (getName(d) || '').toString();
                     if(!name) return;
-                    // get centroid in SVG coords for popup positioning
                     const centroid = path.centroid(d);
-                    // If Germany clicked -> open dice modal (special)
                     if(name.toLowerCase() === 'germany' || name.toLowerCase() === 'federal republic of germany'){
-                        // small click feedback
                         d3.select(this).transition().duration(180).attr('transform','scale(1.03)').transition().duration(180).attr('transform','scale(1)');
                         openDice(name);
                         return;
                     }
-                    // Non-germany: hide country visually and show popup anchored to country
                     const el = d3.select(this);
                     el.classed('removed', true);
                     setTimeout(()=> el.style('display','none'), 700);
-
-                    // hide the label for that country (labels bound to same data)
                     if(labelsSelection){
                         labelsSelection.filter(ld => getName(ld) === name)
                             .style('display','none')
                             .classed('removed', true);
                     }
 
-                    // create a transient popup anchored near the centroid
                     if(Array.isArray(centroid)){
                         const svgRect = svg.node().getBoundingClientRect();
                         const left = svgRect.left + centroid[0];
@@ -203,10 +175,8 @@
                         popup.className = 'popup';
                         popup.textContent = `Your choice is wrong: ${name}`;
                         document.body.appendChild(popup);
-                        // position the popup
                         popup.style.left = left + 'px';
                         popup.style.top = top + 'px';
-                        // remove after a short while
                         setTimeout(()=> {
                             popup.style.transition = 'opacity 300ms';
                             popup.style.opacity = 0;
@@ -216,8 +186,7 @@
 
                     checkWin();
                 });
-
-            // Add labels for larger countries (centroid placement); keep them bound so we can hide/show on reset
+                
             labelsSelection = svg.selectAll('text.country-label')
                 .data(features.filter(f => (d3.geoArea(f) > 0.0009)))
                 .join('text')
@@ -232,7 +201,7 @@
                     return c ? c[1] : 0;
                 })
                 .text(d => getName(d));
-            // ensure labels are hidden immediately after creation (defensive)
+
             if(labelsSelection) labelsSelection.style('display','none');
 
         }).catch(err => {
@@ -241,14 +210,12 @@
         });
 
         function checkWin(){
-            // remaining countries excluding Germany that are not removed
             const remaining = svg.selectAll('path.country')
                 .filter(function(){
                     const name = (this.getAttribute('data-name') || '').toLowerCase();
                     return name !== 'germany' && name !== 'federal republic of germany' && !this.classList.contains('removed');
                 });
             if(remaining.size() === 0){
-                // show win overlay
                 const overlay = document.createElement('div');
                 overlay.id = 'winOverlay';
                 overlay.className = 'modal show';
@@ -268,12 +235,11 @@
         resetFromModal.addEventListener('click', ()=> { resetMap(); hideModal(); });
         document.addEventListener('keydown', e => { if(e.key === 'Escape') hideModal(); });
 
-        /* dice roller in modal */
         const diceEl = document.getElementById('dice');
         const dieFace = document.getElementById('dieFace');
         const rollDice = document.getElementById('rollDice');
         const rollsLeftEl = document.getElementById('rollsLeft');
-        // track dice UI state (must be declared before openDice uses it)
+
         let diceState = { rollsLeft: 3, spinning: false };
 
         function showStaticPopup(message, onClose){
@@ -292,7 +258,7 @@
         }
 
         function openDice(name){
-            // prepare UI
+
             const dieEl = document.getElementById('dieFace');
             const rollsLeftEl = document.getElementById('rollsLeft');
             const rollBtn = document.getElementById('rollDice');
@@ -304,7 +270,6 @@
             document.getElementById('rollInfo').textContent = 'Rolls left: ';
             showModal();
 
-            // ensure single handler: replace with clone to clear old listeners
             const newRoll = rollBtn.cloneNode(true);
             rollBtn.parentNode.replaceChild(newRoll, rollBtn);
             newRoll.addEventListener('click', () => {
@@ -312,11 +277,11 @@
                 diceState.spinning = true;
                 diceState.rollsLeft--;
                 rollsLeftEl.textContent = diceState.rollsLeft;
-                // spinning visual
+
                 dieEl.classList.add('spinning');
-                // show fast-changing faces
+
                 const interval = setInterval(()=> dieEl.textContent = 1 + Math.floor(Math.random()*6), 80);
-                // random total spin time
+
                 const flips = 8 + Math.floor(Math.random()*10);
                 const total = 300 + flips * 80;
                 setTimeout(()=> {
@@ -326,15 +291,14 @@
                     dieEl.classList.remove('spinning');
                     diceState.spinning = false;
 
-                    // Playful static messages depending on which roll it was
                     if(diceState.rollsLeft === 2){
-                        // after first spin (3 -> 2)
-                        showStaticPopup("Oh snap — not this time!\nSorry, you're not lucky yet. Try two more rolls for a chance to win a surprise.");
+
+                        showStaticPopup("Oh noo — not this time!\nSorry, you're not lucky yet. Try two more rolls for a chance to win a surprise.");
                     } else if(diceState.rollsLeft === 1){
-                        // after second spin (2 -> 1)
+
                         showStaticPopup("Oooh, so close!\nOne more roll could win you a gift!");
                     } else if(diceState.rollsLeft === 0){
-                        // after third spin (1 -> 0)
+
                         showStaticPopup("Way! You won a gift from your beloved trip to Munich 🎉\nClick Okay to claim and reset the map.", () => {
                             resetMap();
                             hideModal();
@@ -347,7 +311,6 @@
                 }, total);
             });
         }
-        // --- end dice logic ---
     })();
     </script>
 </body>
