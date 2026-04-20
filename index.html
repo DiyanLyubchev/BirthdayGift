@@ -329,10 +329,10 @@
                     // Playful static messages depending on which roll it was
                     if(diceState.rollsLeft === 2){
                         // after first spin (3 -> 2)
-                        showStaticPopup("Oh snap — not this time!\nSorry, you're not lucky yet. Try two more rolls for a chance to win a Munich surprise.");
+                        showStaticPopup("Oh snap — not this time!\nSorry, you're not lucky yet. Try two more rolls for a chance to win a surprise.");
                     } else if(diceState.rollsLeft === 1){
                         // after second spin (2 -> 1)
-                        showStaticPopup("Oooh, so close!\nOne more roll could win you a gift from Munich — give it another spin!");
+                        showStaticPopup("Oooh, so close!\nOne more roll could win you a gift!");
                     } else if(diceState.rollsLeft === 0){
                         // after third spin (1 -> 0)
                         showStaticPopup("Way! You won a gift from your beloved trip to Munich 🎉\nClick Okay to claim and reset the map.", () => {
