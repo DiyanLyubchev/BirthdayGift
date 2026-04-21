@@ -15,7 +15,7 @@
         h1{font-size:18px;margin:0}
         p{margin:6px 0 14px;color:#bcd2ea;font-size:13px}
         .map-wrap{background:linear-gradient(180deg,#0a1a2a, #07202d);border-radius:10px;padding:12px;display:flex;justify-content:center;}
-        svg{width:1080px;max-width:96vw;height:760px;overflow:hidden;border-radius:6px}
+        svg{width:100%;max-width:1080px;height:auto;max-height:82vh;overflow:hidden;border-radius:6px;display:block}
         .country{fill:#7fb3d5;stroke:#062331;stroke-width:0.7;cursor:pointer;transition:opacity .6s, transform .35s, filter .3s;}
         .country:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 6px 10px rgba(3,10,20,0.6));}
         .removed{opacity:0;pointer-events:none;filter:grayscale(1) brightness(.6);transform:scale(.98) !important;}
@@ -30,7 +30,7 @@
         .country-label{display:none;font-size:10px;fill:#dff6ff;font-weight:600;pointer-events:none;text-anchor:middle;}
         .popup{
             position:absolute;background:linear-gradient(180deg,#091b2a,#06202a);color:#e6f6ff;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);
-            box-shadow:0 8px 20px rgba(0,0,0,0.6);white-space:nowrap;transform:translate(-50%,-120%);z-index:9998;font-size:13px;
+            box-shadow:0 8px 20px rgba(0,0,0,0.6);white-space:nowrap;transform:translate(-50%,-120%);z-index:10002;font-size:13px;
         }
         .dice{width:76px;height:76px;display:flex;align-items:center;justify-content:center;background:#062b3a;border-radius:10px;border:1px solid rgba(255,255,255,0.04)}
         .die{font-size:32px;color:#e6f6ff;font-weight:700;transition:transform 700ms cubic-bezier(.2,.9,.2,1)}
@@ -201,21 +201,43 @@
                             .classed('removed', true);
                     }
 
-                    if(Array.isArray(centroid)){
-                        const svgRect = svg.node().getBoundingClientRect();
-                        const left = svgRect.left + centroid[0];
-                        const top = svgRect.top + centroid[1];
-                        const popup = document.createElement('div');
-                        popup.className = 'popup';
-                        popup.textContent = `Your choice is wrong: ${name}`;
-                        document.body.appendChild(popup);
-                        popup.style.left = left + 'px';
-                        popup.style.top = top + 'px';
-                        setTimeout(()=> {
-                            popup.style.transition = 'opacity 300ms';
-                            popup.style.opacity = 0;
-                            setTimeout(()=> popup.remove(), 350);
-                        }, 2200);
+                    if(Array.isArray(centroid) && svg.node()){
+                        // Convert SVG centroid to screen coordinates so popup appears at the clicked country
+                        try{
+                            const pt = svg.node().createSVGPoint();
+                            pt.x = centroid[0]; pt.y = centroid[1];
+                            const screenPt = pt.matrixTransform(svg.node().getScreenCTM());
+                            const left = screenPt.x;
+                            const top = screenPt.y;
+                            const popup = document.createElement('div');
+                            popup.className = 'popup';
+                            popup.textContent = `Your choice is wrong: ${name}`;
+                            document.body.appendChild(popup);
+                            // place slightly above the point
+                            popup.style.left = left + 'px';
+                            popup.style.top = (top - 12) + 'px';
+                            setTimeout(()=> {
+                                popup.style.transition = 'opacity 300ms';
+                                popup.style.opacity = 0;
+                                setTimeout(()=> popup.remove(), 350);
+                            }, 2200);
+                        }catch(e){
+                            // fallback to previous positioning
+                            const svgRect = svg.node().getBoundingClientRect();
+                            const left = svgRect.left + centroid[0];
+                            const top = svgRect.top + centroid[1];
+                            const popup = document.createElement('div');
+                            popup.className = 'popup';
+                            popup.textContent = `Your choice is wrong: ${name}`;
+                            document.body.appendChild(popup);
+                            popup.style.left = left + 'px';
+                            popup.style.top = top + 'px';
+                            setTimeout(()=> {
+                                popup.style.transition = 'opacity 300ms';
+                                popup.style.opacity = 0;
+                                setTimeout(()=> popup.remove(), 350);
+                            }, 2200);
+                        }
                     }
 
                     checkWin();
