@@ -65,6 +65,16 @@
             .card{padding-top:8px;padding-bottom:8px}
             .map-wrap{padding:4px}
         }
+        /* Very narrow phones (iPhone portrait widths) - use stronger overrides */
+        @media (max-width: 430px){
+            html,body{padding:8px 0 !important}
+            .card{width:100vw !important; max-width:100vw !important; margin:0 !important; border-radius:8px}
+            .map-wrap{padding:4px !important}
+            svg{width:100vw !important; height:calc(100vh - 140px) !important; max-height:none !important; display:block}
+            .dice{width:90px !important; height:90px !important}
+            .die{font-size:40px !important}
+            .country{stroke-width:1.1 !important}
+        }
     </style>
 </head>
 <body>
@@ -370,7 +380,7 @@
                         showStaticPopup("Oooh, so close!\nOne more roll could win you a gift!");
                     } else if(diceState.rollsLeft === 0){
 
-                        showStaticPopup("Way! You won a gift from your beloved trip to Munich 🎉\nClick Okay to claim and reset the map.", () => {
+                        showStaticPopup("Way! You won a gift from your beloved trip to Munich 🎉\nTrip dates: 20–23 November 2026\nClick Okay to claim and reset the map.", () => {
                             resetMap();
                             hideModal();
                         });
