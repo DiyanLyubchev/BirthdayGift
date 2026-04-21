@@ -37,18 +37,33 @@
         .die.spinning{transform:rotateX(1080deg) rotateY(720deg)}
     </style>
     <style>
-        /* Responsive tweaks for small screens (mobile phones) */
-        @media (max-width: 640px){
-            .card{width:98vw;max-width:98vw;padding:14px}
+        /* Responsive tweaks: larger map on tablet/phone and extra-large on small portrait phones */
+        @media (max-width: 900px){
+            .card{width:98vw;max-width:98vw;padding:12px}
             svg{width:98vw;height:82vh}
             .map-wrap{padding:8px}
-            .dice{width:92px;height:92px}
-            .die{font-size:40px}
+            .dialog{min-width:92vw}
+        }
+
+        @media (max-width: 640px){
+            .card{padding:10px}
+            svg{width:100vw;height:86vh}
+            .map-wrap{padding:6px}
+            .dice{width:96px;height:96px}
+            .die{font-size:42px}
             h1{font-size:16px}
             p{font-size:14px}
-            .dialog{min-width:88vw}
+            .dialog{min-width:94vw}
             .dialog h2{font-size:16px}
             .country-label{font-size:12px}
+            .country{stroke-width:1.2}
+        }
+
+        @media (max-width: 420px) and (orientation: portrait){
+            /* For narrow tall phones (e.g. iPhone portrait) maximize vertical space */
+            svg{height:90vh}
+            .card{padding-top:8px;padding-bottom:8px}
+            .map-wrap{padding:4px}
         }
     </style>
 </head>
