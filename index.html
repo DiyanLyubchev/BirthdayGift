@@ -14,7 +14,7 @@
         header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
         h1{font-size:18px;margin:0}
         p{margin:6px 0 14px;color:#bcd2ea;font-size:13px}
-        .map-wrap{background:linear-gradient(180deg,#0a1a2a, #07202d);border-radius:10px;padding:12px;display:flex;justify-content:center;}
+        .map-wrap{background:linear-gradient(180deg,#0a1a2a, #07202d);border-radius:10px;padding:12px;display:flex;justify-content:center;align-items:center}
         svg{width:100%;max-width:1080px;height:auto;max-height:82vh;overflow:hidden;border-radius:6px;display:block}
         .country{fill:#7fb3d5;stroke:#062331;stroke-width:0.7;cursor:pointer;transition:opacity .6s, transform .35s, filter .3s;}
         .country:hover{transform:translateY(-3px) scale(1.02);filter:drop-shadow(0 6px 10px rgba(3,10,20,0.6));}
@@ -75,6 +75,16 @@
             .die{font-size:40px !important}
             .country{stroke-width:1.1 !important}
         }
+        /* Aggressive full-bleed mobile layout for very narrow portrait phones */
+        @media (max-width: 480px) and (orientation: portrait){
+            html,body{height:100% !important; padding:0 !important}
+            body{align-items:flex-start !important}
+            .card{width:100vw !important; max-width:100vw !important; margin:0 !important; border-radius:0 !important; padding:6px !important; box-shadow:none !important}
+            .map-wrap{width:100% !important; padding:0 !important; border-radius:0 !important; display:flex; justify-content:center; align-items:center}
+            svg{width:100vw !important; height:calc(100vh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important; max-height:none !important; display:block}
+            .dialog{min-width:96vw !important}
+            .card > .controls{margin-top:8px}
+        }
     </style>
 </head>
 <body>
@@ -82,7 +92,7 @@
         <header><h1>Birthday Surprise — Find the special country</h1></header>
 
         <div class="map-wrap">
-            <svg id="map" viewBox="0 0 980 620" aria-labelledby="mapTitle" role="img">
+            <svg id="map" viewBox="0 0 980 620" preserveAspectRatio="xMidYMid meet" aria-labelledby="mapTitle" role="img">
                 <title id="mapTitle">Europe map for birthday game</title>
             </svg>
         </div>
@@ -186,10 +196,27 @@
             });
 
             features = europeFeatures;
-            const projection = d3.geoMercator()
-                .rotate([10,0])
-                .fitSize([width, height], { type: 'FeatureCollection', features });
 
+            // Create a projection sized to the SVG's viewBox (keeps geographic coords stable
+            // while the SVG scales responsively). This preserves centering when CSS scales the svg.
+            let projection;
+            function createProjection(){
+                const svgNode = svg.node();
+                let vbw = width, vbh = height;
+                try{
+                    const vb = svgNode.viewBox && svgNode.viewBox.baseVal;
+                    if(vb && vb.width && vb.height){ vbw = vb.width; vbh = vb.height; }
+                }catch(e){ /* ignore */ }
+
+                projection = d3.geoMercator()
+                    .rotate([10,0])
+                    .fitSize([vbw, vbh], { type: 'FeatureCollection', features });
+
+                return projection;
+            }
+
+            // initial projection + path generator
+            createProjection();
             path = d3.geoPath().projection(projection);
 
             countrySelection = svg.selectAll('path.country')
@@ -284,6 +311,25 @@
                 .text(d => getName(d));
 
             if(labelsSelection) labelsSelection.style('display','none');
+
+            // Recalculate projection and redraw when the viewport size changes (mobile rotate/resize)
+            function resizeMap(){
+                createProjection();
+                path = d3.geoPath().projection(projection);
+                if(countrySelection) countrySelection.attr('d', path);
+                if(labelsSelection) labelsSelection
+                    .attr('x', d => { const c = path.centroid(d); return c ? c[0] : 0; })
+                    .attr('y', d => { const c = path.centroid(d); return c ? c[1] : 0; });
+            }
+
+            window.addEventListener('resize', () => {
+                // small debounce to avoid excessive recalculations
+                clearTimeout(window.__mapResizeTimeout);
+                window.__mapResizeTimeout = setTimeout(resizeMap, 120);
+            });
+
+            // Also trigger an initial resize to align with computed CSS sizes
+            setTimeout(resizeMap, 50);
 
         }).catch(err => {
             console.error('Failed to load topology/geojson', err);
